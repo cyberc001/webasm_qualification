@@ -12,7 +12,7 @@
 .set  		 buf_sz, 		256		#input data buffer size (bytes)
 .set		 zero_beg_buf_sz,	2048		#zero line indexes buffer (qwords)
  buf: 		.skip buf_sz 				#input data buffer
- arr_sz:	.skip 8					#string array size
+ arr_sz:	.skip 8					#string array size (count of subarrays)
  zero_buf:	.skip buf_sz				#buffer of zeroes that were presented in previous lines
  zero_beg_buf:	.skip zero_beg_buf_sz			#buffer of line indexes of zeroes
 
@@ -48,13 +48,12 @@ _start:
 	subq	$8,		%rsp		#expanding stack by 8 bytes (qword)
 	movq	%rax,		(%rsp)		#writing subarray size on stack
 	sub	%rax,		%rsp		#expanding stack by amount of bytes read
-	mov	%rsp,		%rdi		#rdi is used as writing destination address
 	xor	%rbx,		%rbx		#rbx is used as a byte counter and buffer index
 						#cl is used as a temporary byte buffer
 	movq	$buf,		%rdx		#rdx is used as a temporary address buffer, for memory addressing
 	stack_loop:
 		movb	(%rdx,%rbx),	%cl			#storing a byte in register cl
-		movb	%cl,		(%rdi,%rbx)		#writing a byte on stack
+		movb	%cl,		(%rsp,%rbx)		#writing a byte on stack
 		incq	%rbx					#incrementing index
 		cmp	%rax,		%rbx			#if index < buffer size
 		jb	stack_loop				#continue writing
@@ -186,10 +185,10 @@ print_line_info:
 	xor	%rdx,		%rdx		#zeroing higher qword for division
 	mov	%rcx,		%rax
 	.lprint_loop__line:
-		mov	$10,	%rsi
+		mov	$10,	%rsi		#diving line no. by 10
 		idiv	%rsi
 		addb	$48,	%dl
-		movb	%dl,	4(%rdi, %rbx)
+		movb	%dl,	4(%rdi, %rbx)	#writing quotent as a digit
 
 		#setting next divider to current quotent
 		xor	%rdx,	%rdx
