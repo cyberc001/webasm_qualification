@@ -15,11 +15,14 @@
  arr_sz:	.skip 8					#string array size (count of subarrays)
  zero_buf:	.skip buf_sz				#buffer of zeroes that were presented in previous lines
  zero_beg_buf:	.skip zero_beg_buf_sz			#buffer of line indexes of zeroes
+ lines_found:	.skip 1					#indicator if there were any lines found
 
 .data
 
  line_msg:	.ascii "line:000000 col:000000 length:000000\n\0"	#line information message for usage in print_line_info function
  line_msg_end:	line_msg_ln = (line_msg_end - line_msg)			#line information length in bytes
+ noline_msg:	.ascii "no lines were found\n\0"			#message if no lines were found
+ noline_msg_end:noline_msg_ln = (noline_msg_end - noline_msg)		#it's length
 
 
 .text
@@ -29,7 +32,10 @@
 _start:
 
 	mov	$arr_sz,	%rdi
-	movq	$0,		(%rdi)		#this variable will store the count of subarrays
+	movq	$0,		(%rdi)
+	mov	$lines_found,	%rdi
+	movb	$0,		(%rdi)		#0 - no lines were found
+
 	mov	%rsp,		%rbp		#setting a stack base pointer
 
 	input:
@@ -152,6 +158,17 @@ _start:
 		cmp	$buf_sz,	%rdx		#if rdx < buf_sz
 		jb	cleanup_loop			#continue with the loop
 
+
+	mov	$lines_found,	%rdi		#checking if any lines were found
+	cmp	$0,		(%rdi)
+	jne	exit				#if any, skip writing absence of lines message
+
+	mov	$1,		%rax		#syswrite()
+	mov	$1,		%rdi		#stdout
+	mov	$noline_msg,	%rsi
+	mov	$noline_msg_ln,	%rdx
+	syscall
+
 	exit:
 	# normal exit
 	mov 	$60,		%rax		#exit()
@@ -160,7 +177,8 @@ _start:
 
 
 # Function name: print_line_info
-# Purpose: print information about a vertical line: line no., column no., and length.
+# Purpose: print information about a vertical line: line no., column no., and length, and
+#	   sets lines_found to 1.
 # Arguments:
 #	%rcx	line no.
 #	%rdx	column no.
@@ -235,6 +253,9 @@ print_line_info:
 	mov	$line_msg,	%rsi
 	mov	$line_msg_ln,	%rdx
 	syscall
+
+	mov	$lines_found,	%rdi	#indicating that at least one line was found
+	movb	$1,		(%rdi)
 
 	pop	%rdx
 	pop	%rsi
