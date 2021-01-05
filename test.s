@@ -9,6 +9,7 @@
 
 .bss
 
+.set		 seek_symb,		48		#symbol to look for ('0')
 .set  		 buf_sz, 		256		#input data buffer size (bytes)
 .set		 zero_beg_buf_sz,	2048		#zero line indexes buffer (qwords)
  buf: 		.skip buf_sz 				#input data buffer
@@ -87,7 +88,7 @@ _start:
 			je 	wasnotzero
 
 			waszero:
-			cmpb	$48,		(%rsi, %rdx)	#if array[rbx] == '0'
+			cmpb	$seek_symb,	(%rsi, %rdx)	#if array[rbx] == '0'
 			je waszero_foundzero
 			waszero_notfoundzero:
 			#end of a line: printing out
@@ -110,7 +111,7 @@ _start:
 
 
 			wasnotzero:
-			cmpb	$48,		(%rsi, %rdx)	#if array[rdx] == '0'
+			cmpb	$seek_symb,	(%rsi, %rdx)	#if array[rdx] == '0'
 			je	wasnotzero_foundzero
 			wasnotzero_notfoundzero:
 			# the number was not zero and is not zero now; skip
